@@ -1,4 +1,4 @@
-package hub.lol.args;
+package hub.lol.flargs;
 
 public class Parser {
     public static Command parse() {

@@ -1,4 +1,4 @@
-package hub.lol.args;
+package hub.lol.flargs;
 
 import java.util.function.Predicate;
 
