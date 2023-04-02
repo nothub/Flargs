@@ -2,7 +2,7 @@ package hub.lol.flargs;
 
 public class Parser {
     public static Command parse() {
-        Command root = new Command();
+        Command root = new Command("root");
 
         /* TODO: how expressive should this be / which of the following docopt features must be possible to express?
           my_program ship new <name>...
