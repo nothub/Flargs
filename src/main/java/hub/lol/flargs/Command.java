@@ -1,13 +1,14 @@
 package hub.lol.flargs;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
 public class Command extends Element implements Runnable {
     Set<Flag> flags = new HashSet<>();
-    int minArgs;
-    int maxArgs;
+    List<String> args = new ArrayList<>();
     Consumer<Command> func;
 
     @Override
