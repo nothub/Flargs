@@ -12,8 +12,10 @@ public class Command extends Element implements Runnable {
     private final Map<String, Command> cmds;
     private final Map<String, Flag<?>> flags = new HashMap<>();
     private final Consumer<Command> func;
+    final int minArgs;
+    final int maxArgs;
 
-    private Command(Map<String, Command> cmds, Set<Flag<?>> flags, Consumer<Command> func) {
+    private Command(Map<String, Command> cmds, Set<Flag<?>> flags, Consumer<Command> func, int minArgs, int maxArgs) {
         this.cmds = cmds;
         for (Flag<?> flag : flags) {
             for (String label : flag.labels()) {
@@ -21,6 +23,8 @@ public class Command extends Element implements Runnable {
             }
         }
         this.func = func;
+        this.minArgs = minArgs;
+        this.maxArgs = maxArgs;
     }
 
     public @Nullable Command cmd(@NotNull String name) {
@@ -49,6 +53,8 @@ public class Command extends Element implements Runnable {
         private final Set<Flag<?>> flags = new HashSet<>();
         private final Set<Element> exclusives = new HashSet<>();
         private Consumer<Command> func;
+        private int minArgs;
+        private int maxArgs = Integer.MAX_VALUE;
         private boolean optional;
         private boolean required;
         private boolean repeating;
@@ -83,6 +89,16 @@ public class Command extends Element implements Runnable {
             return this;
         }
 
+        public Builder minArgs(int n) {
+            this.minArgs = n;
+            return this;
+        }
+
+        public Builder maxArgs(int n) {
+            this.maxArgs = n;
+            return this;
+        }
+
         public Builder optional(boolean optional) {
             this.optional = optional;
             return this;
@@ -103,8 +119,9 @@ public class Command extends Element implements Runnable {
          */
         public Command build() {
             if (func == null) throw new BuildException("Command without function.");
-            Command command = new Command(cmds, flags, func);
+            Command command = new Command(cmds, flags, func, minArgs, maxArgs);
             command.exclusives = this.exclusives;
+            if (minArgs > maxArgs) throw new BuildException("Command min args > max args.");
             command.optional = this.optional;
             command.required = this.required;
             command.repeating = this.repeating;
