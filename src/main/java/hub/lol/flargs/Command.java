@@ -1,31 +1,42 @@
 package hub.lol.flargs;
 
 import hub.lol.flargs.exceptions.BuildException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class Command extends Element implements Runnable {
     private final Map<String, Command> cmds;
-    private final Set<Flag<?>> flags;
+    private final Map<String, Flag<?>> flags = new HashMap<>();
     private final Consumer<Command> func;
 
     private Command(Map<String, Command> cmds, Set<Flag<?>> flags, Consumer<Command> func) {
         this.cmds = cmds;
-        this.flags = flags;
+        for (Flag<?> flag : flags) {
+            for (String label : flag.labels()) {
+                this.flags.put(label, flag);
+            }
+        }
         this.func = func;
     }
 
-    public Map<String, Command> getCmds() {
+    public @Nullable Command cmd(@NotNull String name) {
+        return cmds.get(name);
+    }
+
+    public @NotNull Map<String, Command> cmds() {
         return cmds;
     }
 
-    public Optional<Flag<?>> flag(String label) {
-        return flags.stream().filter(f -> f.labels().contains(label)).findFirst();
+    public @Nullable Flag<?> flag(@NotNull String label) {
+        return flags.get(label);
     }
 
-    public Set<Flag<?>> flags() {
-        return Collections.unmodifiableSet(flags);
+    public @NotNull Set<Flag<?>> flags() {
+        return flags.values().stream().collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
@@ -42,7 +53,7 @@ public class Command extends Element implements Runnable {
         private boolean required;
         private boolean repeating;
 
-        public Builder withCmd(String name, Command cmd) {
+        public Builder withCmd(@NotNull String name, @NotNull Command cmd) {
             this.cmds.put(name, cmd);
             return this;
         }
@@ -50,7 +61,7 @@ public class Command extends Element implements Runnable {
         /**
          * @throws BuildException
          */
-        public Builder withFlag(Flag<?> flag) {
+        public Builder withFlag(@NotNull Flag<?> flag) {
             for (Flag<?> f : this.flags) {
                 for (String l : f.labels()) {
                     if (flag.labels().contains(l)) {
@@ -62,12 +73,12 @@ public class Command extends Element implements Runnable {
             return this;
         }
 
-        public Builder withFunc(Consumer<Command> func) {
+        public Builder withFunc(@NotNull Consumer<Command> func) {
             this.func = func;
             return this;
         }
 
-        public Builder withExclusive(Element other) {
+        public Builder withExclusive(@NotNull Element other) {
             this.exclusives.add(other);
             return this;
         }

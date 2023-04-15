@@ -27,7 +27,7 @@ public class Flag<T> extends Element {
         this.validator = validator;
     }
 
-    public static Flag<Boolean> newBoolFlag(Set<String> labels) {
+    public static Flag<Boolean> newBoolFlag(@NotNull Set<String> labels) {
         Map<String, Boolean> lookup = Map.of(
             "true", true,
             "yes", true,
@@ -57,7 +57,7 @@ public class Flag<T> extends Element {
         return new Flag<>(labels, converter, v -> true);
     }
 
-    public static Flag<Integer> newIntFlag(Set<String> labels) {
+    public static Flag<Integer> newIntFlag(@NotNull Set<String> labels) {
         return new Flag<>(labels, s -> {
             try {
                 return Integer.parseInt(s);
@@ -67,7 +67,7 @@ public class Flag<T> extends Element {
         }, v -> true);
     }
 
-    public static Flag<Float> newFloatFlag(Set<String> labels) {
+    public static Flag<Float> newFloatFlag(@NotNull Set<String> labels) {
         return new Flag<>(labels, s -> {
             try {
                 return Float.parseFloat(s);
@@ -77,7 +77,7 @@ public class Flag<T> extends Element {
         }, v -> true);
     }
 
-    public static Flag<String> newStrFlag(Set<String> labels) {
+    public static Flag<String> newStrFlag(@NotNull Set<String> labels) {
         return new Flag<>(labels, s -> Function.<String>identity().apply(s), s -> !s.isEmpty());
     }
 
@@ -89,19 +89,19 @@ public class Flag<T> extends Element {
         return dfault;
     }
 
-    public @Nullable T value() {
-        if (value == null) {
-            return dfault;
-        }
-        return value;
-    }
-
     /**
      * @throws FormatException
      */
     public void dfault(@NotNull T value) {
         this.dfault = value;
         validate(this.dfault);
+    }
+
+    public @Nullable T value() {
+        if (value == null) {
+            return dfault;
+        }
+        return value;
     }
 
     /**
@@ -115,7 +115,7 @@ public class Flag<T> extends Element {
     /**
      * @throws FormatException
      */
-    private void validate(T value) {
+    private void validate(@Nullable T value) {
         if (value == null) {
             throw new FormatException("Flag " + this.labels + " has null value.");
         }
@@ -130,37 +130,31 @@ public class Flag<T> extends Element {
         private Function<String, T> converter;
         private Predicate<T> validator;
         private T dfault;
-        private T value;
         private boolean optional;
         private boolean required;
         private boolean repeating;
 
-        public Builder<T> withLabel(String label) {
+        public Builder<T> withLabel(@NotNull String label) {
             this.labels.add(label);
             return this;
         }
 
-        public Builder<T> withConverter(Function<String, T> converter) {
+        public Builder<T> withConverter(@NotNull Function<String, T> converter) {
             this.converter = converter;
             return this;
         }
 
-        public Builder<T> withValidator(Predicate<T> validator) {
+        public Builder<T> withValidator(@NotNull Predicate<T> validator) {
             this.validator = validator;
             return this;
         }
 
-        public Builder<T> withDefault(T dfault) {
+        public Builder<T> withDefault(@Nullable T dfault) {
             this.dfault = dfault;
             return this;
         }
 
-        public Builder<T> withValue(T value) {
-            this.value = value;
-            return this;
-        }
-
-        public Builder<T> withExclusive(Element other) {
+        public Builder<T> withExclusive(@NotNull Element other) {
             this.exclusives.add(other);
             return this;
         }
@@ -190,7 +184,6 @@ public class Flag<T> extends Element {
             if (validator == null) throw new BuildException("Flag without validator.");
             Flag<T> flag = new Flag<>(labels, converter, validator);
             flag.dfault = this.dfault;
-            flag.value = this.value;
             flag.exclusives = this.exclusives;
             flag.optional = this.optional;
             flag.required = this.required;
