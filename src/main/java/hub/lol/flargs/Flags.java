@@ -35,7 +35,19 @@ public class Flags {
     my_program [options] [--] <file>...
     */
 
-    public static Command parse(Command root) {
+    public static Command parse(String[] args, Command root) {
+
+        // TODO: parse flag values and command args
+
+        // TODO: validate flag values
+        // TODO: verify required flags are set
+
+        // TODO: verify required num args are present
+
+        for (String arg : args) {
+
+        }
+
         return root;
     }
 }
