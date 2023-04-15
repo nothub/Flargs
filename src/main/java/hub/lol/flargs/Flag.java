@@ -1,9 +1,12 @@
 package hub.lol.flargs;
 
+import hub.lol.flargs.exceptions.BuildException;
+import hub.lol.flargs.exceptions.FormatException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -18,13 +21,13 @@ public class Flag<T> extends Element {
     private T dfault = null;
     private T value = null;
 
-    Flag(Set<String> labels, Function<String, T> converter, Predicate<T> validator) {
+    private Flag(Set<String> labels, Function<String, T> converter, Predicate<T> validator) {
         this.labels = Collections.unmodifiableSet(labels);
         this.converter = converter;
         this.validator = validator;
     }
 
-    public static Flag<Boolean> boolFlag(Set<String> labels) {
+    public static Flag<Boolean> newBoolFlag(Set<String> labels) {
         Map<String, Boolean> lookup = Map.of(
             "true", true,
             "yes", true,
@@ -54,7 +57,7 @@ public class Flag<T> extends Element {
         return new Flag<>(labels, converter, v -> true);
     }
 
-    public static Flag<Integer> intFlag(Set<String> labels) {
+    public static Flag<Integer> newIntFlag(Set<String> labels) {
         return new Flag<>(labels, s -> {
             try {
                 return Integer.parseInt(s);
@@ -64,7 +67,7 @@ public class Flag<T> extends Element {
         }, v -> true);
     }
 
-    public static Flag<Float> floatFlag(Set<String> labels) {
+    public static Flag<Float> newFloatFlag(Set<String> labels) {
         return new Flag<>(labels, s -> {
             try {
                 return Float.parseFloat(s);
@@ -74,8 +77,16 @@ public class Flag<T> extends Element {
         }, v -> true);
     }
 
-    public static Flag<String> strFlag(Set<String> labels) {
+    public static Flag<String> newStrFlag(Set<String> labels) {
         return new Flag<>(labels, s -> Function.<String>identity().apply(s), s -> !s.isEmpty());
+    }
+
+    public Set<String> labels() {
+        return labels;
+    }
+
+    public @Nullable T dfault() {
+        return dfault;
     }
 
     public @Nullable T value() {
@@ -88,7 +99,7 @@ public class Flag<T> extends Element {
     /**
      * @throws FormatException
      */
-    public void setDefault(@NotNull T value) {
+    public void dfault(@NotNull T value) {
         this.dfault = value;
         validate(this.dfault);
     }
@@ -96,11 +107,14 @@ public class Flag<T> extends Element {
     /**
      * @throws FormatException
      */
-    private void setValue(@NotNull String value) {
+    private void value(@NotNull String value) {
         this.value = converter.apply(value);
         validate(this.value);
     }
 
+    /**
+     * @throws FormatException
+     */
     private void validate(T value) {
         if (value == null) {
             throw new FormatException("Flag " + this.labels + " has null value.");
@@ -110,13 +124,79 @@ public class Flag<T> extends Element {
         }
     }
 
-    public static class FormatException extends RuntimeException {
-        public FormatException(String message) {
-            super(message);
+    public static final class Builder<T> {
+        private final Set<String> labels = new HashSet<>();
+        private final Set<Element> exclusives = new HashSet<>();
+        private Function<String, T> converter;
+        private Predicate<T> validator;
+        private T dfault;
+        private T value;
+        private boolean optional;
+        private boolean required;
+        private boolean repeating;
+
+        public Builder<T> withLabel(String label) {
+            this.labels.add(label);
+            return this;
         }
 
-        public FormatException(Throwable cause) {
-            super(cause);
+        public Builder<T> withConverter(Function<String, T> converter) {
+            this.converter = converter;
+            return this;
+        }
+
+        public Builder<T> withValidator(Predicate<T> validator) {
+            this.validator = validator;
+            return this;
+        }
+
+        public Builder<T> withDefault(T dfault) {
+            this.dfault = dfault;
+            return this;
+        }
+
+        public Builder<T> withValue(T value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder<T> withExclusive(Element other) {
+            this.exclusives.add(other);
+            return this;
+        }
+
+        public Builder<T> optional(boolean optional) {
+            this.optional = optional;
+            return this;
+        }
+
+        public Builder<T> required(boolean required) {
+            this.required = required;
+            return this;
+        }
+
+        public Builder<T> repeating(boolean repeating) {
+            this.repeating = repeating;
+            return this;
+        }
+
+        /**
+         * @throws BuildException
+         * @throws FormatException
+         */
+        public Flag<T> build() {
+            if (labels.isEmpty()) throw new BuildException("Flag without labels.");
+            if (converter == null) throw new BuildException("Flag without converter.");
+            if (validator == null) throw new BuildException("Flag without validator.");
+            Flag<T> flag = new Flag<>(labels, converter, validator);
+            flag.dfault = this.dfault;
+            flag.value = this.value;
+            flag.exclusives = this.exclusives;
+            flag.optional = this.optional;
+            flag.required = this.required;
+            flag.repeating = this.repeating;
+            flag.validate(flag.value);
+            return flag;
         }
     }
 }
