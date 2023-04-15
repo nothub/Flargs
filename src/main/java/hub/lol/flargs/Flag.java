@@ -89,14 +89,6 @@ public class Flag<T> extends Element {
         return dfault;
     }
 
-    /**
-     * @throws FormatException
-     */
-    public void dfault(@NotNull T value) {
-        this.dfault = value;
-        validate(this.dfault);
-    }
-
     public @Nullable T value() {
         if (value == null) {
             return dfault;
@@ -107,7 +99,7 @@ public class Flag<T> extends Element {
     /**
      * @throws FormatException
      */
-    private void value(@NotNull String value) {
+    void value(@NotNull String value) {
         this.value = converter.apply(value);
         validate(this.value);
     }
@@ -134,7 +126,14 @@ public class Flag<T> extends Element {
         private boolean required;
         private boolean repeating;
 
+        /**
+         * @throws BuildException
+         */
         public Builder<T> withLabel(@NotNull String label) {
+            if (label.isEmpty()) throw new BuildException("Flag label is empty.");
+            if (!label.startsWith("-")) throw new BuildException("Flag label must begin with dash.");
+            if (!label.contains(" ")) throw new BuildException("Flag can not contain space.");
+            if (!label.contains("=")) throw new BuildException("Flag can not contain equal sign.");
             this.labels.add(label);
             return this;
         }

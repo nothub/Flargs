@@ -12,6 +12,7 @@ public class Command extends Element implements Runnable {
     private final Map<String, Command> cmds;
     private final Map<String, Flag<?>> flags = new HashMap<>();
     private final Consumer<Command> func;
+    private final List<String> args = new ArrayList<>();
     final int minArgs;
     final int maxArgs;
 
@@ -27,10 +28,6 @@ public class Command extends Element implements Runnable {
         this.maxArgs = maxArgs;
     }
 
-    public @Nullable Command cmd(@NotNull String name) {
-        return cmds.get(name);
-    }
-
     public @NotNull Map<String, Command> cmds() {
         return cmds;
     }
@@ -41,6 +38,14 @@ public class Command extends Element implements Runnable {
 
     public @NotNull Set<Flag<?>> flags() {
         return flags.values().stream().collect(Collectors.toUnmodifiableSet());
+    }
+
+    public @NotNull List<String> args() {
+        return Collections.unmodifiableList(args);
+    }
+
+    void addArgs(String... args) {
+        this.args.addAll(Arrays.asList(args));
     }
 
     @Override
