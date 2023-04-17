@@ -2,7 +2,7 @@ package hub.lol.flargs;
 
 import java.util.Arrays;
 
-public class Flags {
+public class Flargs {
 
     public static Command parse(String[] args, Command root) {
         int cursor = 0;

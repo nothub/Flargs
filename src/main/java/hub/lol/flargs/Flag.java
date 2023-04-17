@@ -137,8 +137,8 @@ public class Flag<T> {
         public Builder<T> withLabel(@NotNull String label) {
             if (label.isEmpty()) throw new BuildException("Flag label is empty.");
             if (!label.startsWith("-")) throw new BuildException("Flag label must begin with dash.");
-            if (!label.contains(" ")) throw new BuildException("Flag label can not contain space.");
-            if (!label.contains("=")) throw new BuildException("Flag label can not contain equal sign.");
+            if (label.contains(" ")) throw new BuildException("Flag label can not contain space.");
+            if (label.contains("=")) throw new BuildException("Flag label can not contain equal sign.");
             this.labels.add(label);
             return this;
         }

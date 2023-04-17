@@ -29,6 +29,10 @@ public class Command implements Runnable {
         this.maxArgs = maxArgs;
     }
 
+    public void exec() {
+        this.func.accept(this);
+    }
+
     public @NotNull Map<String, Command> cmds() {
         return cmds;
     }
