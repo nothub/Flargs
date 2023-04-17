@@ -5,21 +5,22 @@ import hub.lol.flargs.exceptions.FormatException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class Flag<T> extends Element {
+public class Flag<T> {
     private final Set<String> labels;
     private final Function<String, T> converter;
     private final Predicate<T> validator;
 
     private T dfault = null;
     private T value = null;
+    private boolean optional = false;
+    private boolean required = false;
+    private boolean repeating = false;
+    private Set<String> exclusives = new HashSet<>();
 
     private Flag(Set<String> labels, Function<String, T> converter, Predicate<T> validator) {
         this.labels = Collections.unmodifiableSet(labels);
@@ -27,7 +28,7 @@ public class Flag<T> extends Element {
         this.validator = validator;
     }
 
-    public static Flag<Boolean> newBoolFlag(@NotNull Set<String> labels) {
+    public static Flag<Boolean> newBoolFlag(String... labels) {
         Map<String, Boolean> lookup = Map.of(
             "true", true,
             "yes", true,
@@ -54,11 +55,11 @@ public class Flag<T> extends Element {
             return lookup.get(s.toLowerCase());
         };
 
-        return new Flag<>(labels, converter, v -> true);
+        return new Flag<>(Arrays.stream(labels).collect(Collectors.toUnmodifiableSet()), converter, v -> true);
     }
 
-    public static Flag<Integer> newIntFlag(@NotNull Set<String> labels) {
-        return new Flag<>(labels, s -> {
+    public static Flag<Integer> newIntFlag(String... labels) {
+        return new Flag<>(Arrays.stream(labels).collect(Collectors.toUnmodifiableSet()), s -> {
             try {
                 return Integer.parseInt(s);
             } catch (NumberFormatException ex) {
@@ -67,8 +68,8 @@ public class Flag<T> extends Element {
         }, v -> true);
     }
 
-    public static Flag<Float> newFloatFlag(@NotNull Set<String> labels) {
-        return new Flag<>(labels, s -> {
+    public static Flag<Float> newFloatFlag(String... labels) {
+        return new Flag<>(Arrays.stream(labels).collect(Collectors.toUnmodifiableSet()), s -> {
             try {
                 return Float.parseFloat(s);
             } catch (NumberFormatException ex) {
@@ -77,8 +78,8 @@ public class Flag<T> extends Element {
         }, v -> true);
     }
 
-    public static Flag<String> newStrFlag(@NotNull Set<String> labels) {
-        return new Flag<>(labels, s -> Function.<String>identity().apply(s), s -> !s.isEmpty());
+    public static Flag<String> newStrFlag(String... labels) {
+        return new Flag<>(Arrays.stream(labels).collect(Collectors.toUnmodifiableSet()), s -> Function.<String>identity().apply(s), s -> !s.isEmpty());
     }
 
     public Set<String> labels() {
@@ -116,15 +117,19 @@ public class Flag<T> extends Element {
         }
     }
 
+    public boolean exclusive(String label) {
+        return this.exclusives.contains(label);
+    }
+
     public static final class Builder<T> {
         private final Set<String> labels = new HashSet<>();
-        private final Set<Element> exclusives = new HashSet<>();
         private Function<String, T> converter;
         private Predicate<T> validator;
         private T dfault;
         private boolean optional;
         private boolean required;
         private boolean repeating;
+        private final Set<String> exclusives = new HashSet<>();
 
         /**
          * @throws BuildException
@@ -132,8 +137,8 @@ public class Flag<T> extends Element {
         public Builder<T> withLabel(@NotNull String label) {
             if (label.isEmpty()) throw new BuildException("Flag label is empty.");
             if (!label.startsWith("-")) throw new BuildException("Flag label must begin with dash.");
-            if (!label.contains(" ")) throw new BuildException("Flag can not contain space.");
-            if (!label.contains("=")) throw new BuildException("Flag can not contain equal sign.");
+            if (!label.contains(" ")) throw new BuildException("Flag label can not contain space.");
+            if (!label.contains("=")) throw new BuildException("Flag label can not contain equal sign.");
             this.labels.add(label);
             return this;
         }
@@ -153,8 +158,10 @@ public class Flag<T> extends Element {
             return this;
         }
 
-        public Builder<T> withExclusive(@NotNull Element other) {
-            this.exclusives.add(other);
+        public Builder<T> withExclusive(String... labels) {
+            for (String label : labels) {
+                this.exclusives.add(label);
+            }
             return this;
         }
 

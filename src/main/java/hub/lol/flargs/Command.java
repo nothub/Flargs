@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class Command extends Element implements Runnable {
+public class Command implements Runnable {
     private final Map<String, Command> cmds;
     private final Map<String, Flag<?>> flags = new HashMap<>();
     private final Consumer<Command> func;
@@ -20,6 +20,7 @@ public class Command extends Element implements Runnable {
         this.cmds = cmds;
         for (Flag<?> flag : flags) {
             for (String label : flag.labels()) {
+                if (this.flags.containsKey(label)) throw new IllegalStateException("Duplicate Flag label in Command.");
                 this.flags.put(label, flag);
             }
         }
@@ -45,7 +46,9 @@ public class Command extends Element implements Runnable {
     }
 
     void addArgs(String... args) {
-        this.args.addAll(Arrays.asList(args));
+        for (String arg : args) {
+            this.args.add(arg);
+        }
     }
 
     @Override
@@ -56,13 +59,9 @@ public class Command extends Element implements Runnable {
     public static final class Builder {
         private final Map<String, Command> cmds = new HashMap<>();
         private final Set<Flag<?>> flags = new HashSet<>();
-        private final Set<Element> exclusives = new HashSet<>();
         private Consumer<Command> func;
         private int minArgs;
         private int maxArgs = Integer.MAX_VALUE;
-        private boolean optional;
-        private boolean required;
-        private boolean repeating;
 
         public Builder withCmd(@NotNull String name, @NotNull Command cmd) {
             this.cmds.put(name, cmd);
@@ -89,11 +88,6 @@ public class Command extends Element implements Runnable {
             return this;
         }
 
-        public Builder withExclusive(@NotNull Element other) {
-            this.exclusives.add(other);
-            return this;
-        }
-
         public Builder minArgs(int n) {
             this.minArgs = n;
             return this;
@@ -104,33 +98,13 @@ public class Command extends Element implements Runnable {
             return this;
         }
 
-        public Builder optional(boolean optional) {
-            this.optional = optional;
-            return this;
-        }
-
-        public Builder required(boolean required) {
-            this.required = required;
-            return this;
-        }
-
-        public Builder repeating(boolean repeating) {
-            this.repeating = repeating;
-            return this;
-        }
-
         /**
          * @throws BuildException
          */
         public Command build() {
             if (func == null) throw new BuildException("Command without function.");
-            Command command = new Command(cmds, flags, func, minArgs, maxArgs);
-            command.exclusives = this.exclusives;
             if (minArgs > maxArgs) throw new BuildException("Command min args > max args.");
-            command.optional = this.optional;
-            command.required = this.required;
-            command.repeating = this.repeating;
-            return command;
+            return new Command(cmds, flags, func, minArgs, maxArgs);
         }
     }
 }
